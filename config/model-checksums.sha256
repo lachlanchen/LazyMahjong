@@ -1,0 +1,3 @@
+# Intentionally empty. Mortal's upstream documentation does not publish an
+# official pretrained model artifact. Never add an unofficial weight without a
+# license/security review and an exact lowercase SHA-256 line in this file.

@@ -1,0 +1,49 @@
+{
+  "name": "mahjong-table-teacher",
+  "version": "0.1.0",
+  "description": "A local-first Mahjong decision teacher with Riichi, MCR, and Hong Kong learning profiles.",
+  "private": true,
+  "license": "MIT",
+  "author": "Lachlan Chen",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lachlanchen/Mahjong.git"
+  },
+  "homepage": "https://github.com/lachlanchen/Mahjong#readme",
+  "bugs": {
+    "url": "https://github.com/lachlanchen/Mahjong/issues"
+  },
+  "keywords": [
+    "mahjong",
+    "riichi",
+    "mcr",
+    "hong-kong-mahjong",
+    "teaching"
+  ],
+  "packageManager": "npm@10.9.4",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5182",
+    "lint": "tsc -b --pretty false",
+    "test": "vitest run",
+    "build": "tsc -b && vite build",
+    "audit": "npm audit --audit-level=high",
+    "check": "npm run lint && npm test && npm run build && npm run audit && bash -n scripts/*.sh && bash scripts/test-engine-path-safety.sh"
+  },
+  "dependencies": {
+    "lucide-react": "0.542.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "5.2.0",
+    "typescript": "5.9.3",
+    "vite": "7.3.6",
+    "vitest": "3.2.7"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}

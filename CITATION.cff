@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use Four Winds, please cite this software."
+type: software
+title: "Four Winds: Mahjong Decision Teacher"
+version: 0.1.0
+date-released: 2026-08-11
+authors:
+  - family-names: Chen
+    given-names: Lachlan
+repository-code: "https://github.com/lachlanchen/Mahjong"
+url: "https://github.com/lachlanchen/Mahjong"
+license: MIT
+keywords:
+  - Mahjong
+  - Riichi
+  - MCR
+  - Hong Kong Mahjong
+  - game teaching
