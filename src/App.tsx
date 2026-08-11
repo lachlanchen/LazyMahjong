@@ -8,7 +8,8 @@ import { PROFILES } from './domain/profiles'
 import type { ActionCandidate, Locale, ProfileId, Seat, SessionRecord, SessionSummary, TileInstance } from './domain/types'
 import { PROFILE_IDS } from './domain/types'
 import { tileGlyph } from './domain/tiles'
-import { normalizeLocale, translate } from './i18n/catalogs'
+import { localeLabels, normalizeLocale, supportedLocales, translate } from './i18n/catalogs'
+import { applyDocumentLocale } from './i18n/document'
 import {
   SessionConflictError,
   listSessions,
@@ -62,7 +63,7 @@ export function App() {
     } catch {
       // A denied browser store must not prevent the local teaching UI loading.
     }
-    document.documentElement.lang = locale
+    applyDocumentLocale(locale)
   }, [locale])
 
   useEffect(() => {
@@ -107,8 +108,7 @@ export function App() {
       setNotice({ tone: 'good', text: t(result.resumed ? 'setup.resumed' : 'setup.created') })
       refreshSessions()
     }).catch((error: unknown) => {
-      const reason = error instanceof Error ? error.message : 'storage'
-      setNotice({ tone: 'warn', text: t('candidate.failed', { reason }) })
+      setNotice({ tone: 'warn', text: t('candidate.failed') })
     }).finally(() => setMutating(false))
   }, [mutating, profile, refreshSessions, seed, t])
 
@@ -157,8 +157,8 @@ export function App() {
         setNotice({ tone: 'warn', text: t('candidate.stale') })
         return
       }
-      const reason = error instanceof Error ? error.message : 'unknown'
-      setNotice({ tone: 'warn', text: reason.includes('STALE') ? t('candidate.stale') : t('candidate.failed', { reason }) })
+      const reason = error instanceof Error ? error.message : ''
+      setNotice({ tone: 'warn', text: reason.includes('STALE') ? t('candidate.stale') : t('candidate.failed') })
     }).finally(() => setMutating(false))
   }, [mutating, record, refreshSessions, selectedId, t])
 
@@ -180,7 +180,7 @@ export function App() {
           const latest = loadSession(window.localStorage, snapshot.id)
           if (latest) setRecord((current) => current?.id === latest.id ? latest : current)
         }
-        setNotice({ tone: 'warn', text: t('candidate.failed', { reason: error instanceof Error ? error.message : 'automation' }) })
+        setNotice({ tone: 'warn', text: t('candidate.failed') })
       }).finally(() => { if (!cancelled) setAutomating(false) })
     }, 520)
     return () => {
@@ -196,16 +196,17 @@ export function App() {
   )
 
   return (
-    <div className="app-shell" data-locale={locale} data-profile={record?.state.profile ?? profile}>
+    <div className="app-shell" data-locale={locale} data-profile={record?.state.profile ?? profile} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <header className="topbar">
         <div className="brand-lockup"><span className="brand-seal">東</span><div><strong>{t('app.brand')}</strong><small>{t('app.product')}</small></div></div>
         <p className="tagline">{t('app.tagline')}</p>
-        <div className="locale-switch" role="group" aria-label={t('locale.label')}>
+        <label className="locale-switch">
           <Languages size={15} />
-          {(['en', 'zh-Hans', 'ja'] as Locale[]).map((item) => (
-            <button key={item} type="button" className={locale === item ? 'active' : ''} onClick={() => setLocale(item)} aria-pressed={locale === item}>{t(`locale.${item}`)}</button>
-          ))}
-        </div>
+          <span>{t('locale.label')}</span>
+          <select aria-label={t('locale.label')} value={locale} onChange={(event) => setLocale(normalizeLocale(event.target.value))}>
+            {supportedLocales.map((item) => <option key={item} value={item}>{localeLabels[item]}</option>)}
+          </select>
+        </label>
       </header>
 
       <main>

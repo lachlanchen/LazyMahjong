@@ -1,14 +1,16 @@
 cff-version: 1.2.0
-message: "If you use Four Winds, please cite this software."
+message: "If you use LazyMahjong, please cite this repository."
 type: software
-title: "Four Winds: Mahjong Decision Teacher"
+title: "LazyMahjong: Four Winds Mahjong Decision Teacher"
 version: 0.1.0
 date-released: 2026-08-11
+abstract: "A deterministic, local-first Mahjong decision teacher with Riichi, MCR, and Hong Kong learning profiles."
 authors:
   - family-names: Chen
     given-names: Lachlan
+    alias: lachlanchen
 repository-code: "https://github.com/lachlanchen/LazyMahjong"
-url: "https://github.com/lachlanchen/LazyMahjong"
+url: "https://lazying.art"
 license: MIT
 keywords:
   - Mahjong

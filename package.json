@@ -23,7 +23,8 @@
   "packageManager": "npm@10.9.4",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5182",
+    "dev": "vite --host 127.0.0.1 --port 5182 --strictPort",
+    "preview": "vite preview --host 127.0.0.1 --port 5182 --strictPort",
     "lint": "tsc -b --pretty false",
     "test": "vitest run",
     "build": "tsc -b && vite build",

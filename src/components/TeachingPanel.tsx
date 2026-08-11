@@ -54,6 +54,35 @@ const facetIcons = {
   tempo: TimerReset,
 }
 
+const profileNameKeys: Record<string, string> = {
+  riichi: 'profile.riichi.name',
+  mcr: 'profile.mcr.name',
+  'hong-kong': 'profile.hk.name',
+}
+
+const phaseKeys: Record<string, string> = {
+  draw: 'phase.draw',
+  discard: 'phase.discard',
+  claim: 'phase.claim',
+  finished: 'phase.finished',
+}
+
+function localizedFacetParams(
+  facet: CandidatePreview['facets'][number],
+  t: Translate,
+): Record<string, string | number> {
+  const params = { ...facet.params }
+  if (facet.id === 'value' && typeof params.profile === 'string') {
+    const key = profileNameKeys[params.profile]
+    if (key) params.profile = t(key)
+  }
+  if (facet.id === 'tempo' && typeof params.phase === 'string') {
+    const key = phaseKeys[params.phase]
+    if (key) params.phase = t(key)
+  }
+  return params
+}
+
 export function TeachingPanel({ candidates, hand, preview, selectedId, inspectedId, t, onInspect, onSelect, onConfirm, onCancel, busy }: TeachingPanelProps) {
   const activeId = inspectedId ?? selectedId
   return (
@@ -130,7 +159,7 @@ export function TeachingPanel({ candidates, hand, preview, selectedId, inspected
               return (
                 <article key={facet.id} className={`teaching-facet facet-${facet.id}`}>
                   <header><Icon size={15} /><strong>{t(facet.titleKey)}</strong></header>
-                  <p>{t(facet.bodyKey, facet.params)}</p>
+                  <p>{t(facet.bodyKey, localizedFacetParams(facet, t))}</p>
                   <span className={`provenance ${facet.evidence}`}>{t(`evidence.${facet.evidence}`)}</span>
                 </article>
               )

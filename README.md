@@ -1,86 +1,88 @@
-# Four Winds · Mahjong decision teacher
+[English](README.md) · [العربية](i18n/README.ar.md) · [Español](i18n/README.es.md) · [Français](i18n/README.fr.md) · [日本語](i18n/README.ja.md) · [한국어](i18n/README.ko.md) · [Tiếng Việt](i18n/README.vi.md) · [中文 (简体)](i18n/README.zh-Hans.md) · [中文（繁體）](i18n/README.zh-Hant.md) · [Deutsch](i18n/README.de.md) · [Русский](i18n/README.ru.md)
 
-A self-contained React/Vite TypeScript teaching table for learning Mahjong one
-decision at a time. It supports a deterministic beginner draw/discard loop and
-clearly selectable Japanese Riichi, Chinese Official/MCR, and Hong Kong
-profiles. Unsupported advanced scoring is visible before and during play.
+[![LazyingArt banner](https://github.com/lachlanchen/lachlanchen/raw/main/figs/banner.png)](https://github.com/lachlanchen/lachlanchen/blob/main/figs/banner.png)
 
-## What is authoritative now
+# LazyMahjong · Four Winds
 
-- seeded 136-tile wall with four unique copies of every tile type;
-- four seats, active-seat authority, legal draws/discards, sequential call
-  windows, chi/chow, pon/pung, kan/kong, ron and tsumo shape completion;
-- standard and seven-pairs completion, exact waits, visible-copy ukeire, a
-  comparative shape index, and visible river facts;
-- opaque state-bound candidate IDs, non-mutating preview, explicit confirmation,
-  stale-candidate rejection, revision compare-and-swap, same-origin browser
-  write serialization, and exact request-payload idempotency;
-- viewer-specific redaction of hands, wall order, seed, and opponent private
-  draws;
-- durable local sessions with a launch-key index that resumes instead of
-  duplicating;
-- English, Simplified Chinese, and Japanese message catalogs.
+*Draw, compare, explain, then commit—without revealing another seat’s hand.*
 
-See [the exact contract and scoring gaps](docs/framework-contract.md). This
-initial release intentionally does **not** claim full Riichi yaku/fu/han, MCR
-fan/8-point minimum, Hong Kong house scoring, flowers, payments, or complete
-replacement/dead-wall rules.
+[![Lazying Art](https://img.shields.io/badge/Lazying-Art-0EA5E9?style=flat-square)](https://lazying.art) [![App screenshot](https://img.shields.io/badge/App-screenshot-173F5F?style=flat-square)](docs/images/app.png) [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsors-EA4AAA?style=flat-square&logo=githubsponsors)](https://github.com/sponsors/lachlanchen)
 
-## Learning loop
+LazyMahjong is a local-first Mahjong decision teacher for Japanese Riichi, Chinese Official/MCR, and Hong Kong learning profiles. Deterministic TypeScript owns the wall, legal actions, redaction, completion checks, history, and persistence.
 
-1. Choose a profile and replay seed; the same pair resumes one saved table.
-2. Tap, focus, or hover a legal candidate to inspect it without mutation.
-3. Compare **Play → Because → Changes → Opponent → Then check → Principle**.
-4. Read separately labeled exact, calculated, and authored evidence for shape,
-   ukeire, safety, value, and tempo.
-5. Click the separate confirmation control. Only that state-bound action can
-   mutate the table.
+## Support open teaching tools
 
-Other seats use a deterministic, deliberately simple policy and never see the
-learner's private analysis. This is a browser-local reference authority; a real
-multiplayer deployment must put authoritative state and secrets on a server.
+| Donate | PayPal | Stripe |
+| --- | --- | --- |
+| [![Donate](https://img.shields.io/badge/Donate-LazyingArt-0EA5E9?style=for-the-badge&logo=kofi&logoColor=white)](https://chat.lazying.art/donate) | [![PayPal](https://img.shields.io/badge/PayPal-RongzhouChen-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/RongzhouChen) | [![Stripe](https://img.shields.io/badge/Stripe-Donate-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/aFadR8gIaflgfQV6T4fw400) |
 
-## Development
+## App preview
 
-Requires Node.js `^20.19.0` or `>=22.12.0`.
+[![Application screenshot](docs/images/app.png)](docs/images/app.png)
+
+The current table separates the learner’s concealed hand, legal choices, non-mutating lesson preview, and provenance-labeled evidence.
+
+## What the table teaches
+
+- A seeded 136-tile wall, four seats, legal draws and discards, call windows, chi/chow, pon/pung, kan/kong, ron, and tsumo shape completion.
+- Standard four-groups-and-a-pair and seven-pairs completion, exact waits, visible-copy ukeire, a comparative shape index, and visible river facts.
+- Riichi, MCR, and Hong Kong profiles expose their scoring boundaries before and during play; unsupported yaku, fan, payments, flowers, and house rules are never presented as authoritative.
+- The learning loop is consistent: inspect a state-bound legal candidate, compare a hypothetical preview, then confirm explicitly.
+
+## Repository map
+
+| Path | Purpose |
+| --- | --- |
+| [`src/domain/`](src/domain/) | Deterministic tiles, profiles, legal candidates, state transitions, redaction, and hand analysis. |
+| [`src/i18n/catalogs.ts`](src/i18n/catalogs.ts) | Eleven complete learner-facing catalogs with stable keys and placeholders. |
+| [`src/App.tsx`](src/App.tsx) | The multilingual setup, table, decision lab, chronicle, and saved-session interface. |
+| [`docs/framework-contract.md`](docs/framework-contract.md) | The exact supported rules and conspicuous scoring gaps. |
+| [`docs/engine-lane.md`](docs/engine-lane.md) | The optional disabled engine lane and reviewed integration boundary. |
+| [`docs/images/app.png`](docs/images/app.png) | Current application screenshot. |
+
+## Quick start
+
+Requires Node.js 20.19 or newer and npm.
 
 ```bash
 npm ci
 npm run dev
+```
+
+<http://127.0.0.1:5182/>
+
+The development and preview servers are pinned to `127.0.0.1:5182` and fail rather than selecting another port.
+
+## Authority, privacy, and evidence
+
+- The interface renders only a viewer-redacted public view; other hands, wall order, seed, and private evaluation remain hidden.
+- Opaque candidate IDs bind the complete state token, actor, and canonical action. A coordinate, tile label, model, or stale candidate cannot authorize mutation.
+- Preview is hypothetical. The next wall tile stays hidden until a legal draw is explicitly confirmed.
+- Exact, calculated, authored, engine, model, and analogy evidence remain separately labeled. Unsupported profile scoring stays visible rather than being guessed.
+
+## Verification
+
+```bash
 npm run check
 git diff --check
 ```
 
-`npm run check` runs strict TypeScript, deterministic Vitest coverage, a Vite
-production build, high-severity dependency audit, shell syntax checks, and
-offline symlink-redirection tests for optional engine/model paths.
-
-The optional, disabled Mortal/mjai lane is documented in
-[docs/engine-lane.md](docs/engine-lane.md). Its scripts were not run and no model
-was downloaded for this release.
-
-## Repository hygiene
-
-`.local/`, models, source checkouts, browser profiles, databases, screenshots,
-caches, credentials, and generated builds are ignored. This repository is MIT
-licensed; optional upstream engines retain their own licenses.
+The check gate runs strict TypeScript, deterministic domain and persistence tests, server-rendered UI and 11-language catalog parity tests, a production build, dependency audit, shell syntax checks, and optional-engine path-safety tests.
 
 ## Citation
 
-GitHub reads [`CITATION.cff`](CITATION.cff) to expose **Cite this repository**.
+If you use LazyMahjong in teaching or research, cite the repository. GitHub reads [CITATION.cff](CITATION.cff) and displays a **Cite this repository** panel.
 
 ```bibtex
-@software{chen_four_winds_2026,
+@software{chen_lazy_mahjong_2026,
   author  = {Chen, Lachlan},
-  title   = {Four Winds: Mahjong Decision Teacher},
+  title   = {LazyMahjong: Four Winds Mahjong Decision Teacher},
   year    = {2026},
   version = {0.1.0},
   url     = {https://github.com/lachlanchen/LazyMahjong}
 }
 ```
 
-## Support
+## Status
 
-Support continued open-source work through [GitHub Sponsors](https://github.com/sponsors/lachlanchen)
-or visit [Lazying Art](https://lazying.art). Funding links are declared in
-[`.github/FUNDING.yml`](.github/FUNDING.yml).
+This release is an honest teaching subset: tile flow, calls, completion, waits, and visible-tile analysis are deterministic; full Riichi, MCR, and Hong Kong scoring and payment authorities remain future work. The optional engine lane is disabled by default.

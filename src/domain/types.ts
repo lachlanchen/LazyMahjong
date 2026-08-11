@@ -3,7 +3,7 @@ export type Seat = (typeof SEATS)[number]
 
 export const PROFILE_IDS = ['riichi', 'mcr', 'hong-kong'] as const
 export type ProfileId = (typeof PROFILE_IDS)[number]
-export type Locale = 'en' | 'zh-Hans' | 'ja'
+export type Locale = 'en' | 'ar' | 'es' | 'fr' | 'ja' | 'ko' | 'vi' | 'zh-Hans' | 'zh-Hant' | 'de' | 'ru'
 
 export type EvidenceKind = 'exact' | 'calculated' | 'engine' | 'authored' | 'model' | 'analogy'
 

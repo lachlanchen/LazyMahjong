@@ -32,10 +32,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(15, 106, 90,
 .brand-lockup small { margin-top: 3px; color: #c9d8d2; font-size: .63rem; }
 .brand-seal { width: 39px; height: 39px; display: grid; place-items: center; border: 1px solid #d8b05f; border-radius: 11px; color: #fff8e7; background: #9a4035; font-weight: 800; box-shadow: inset 0 0 0 3px #7f332b; }
 .tagline { flex: 1; margin: 0; color: #d5e1dd; font-size: .76rem; }
-.locale-switch { display: inline-flex; align-items: center; gap: 3px; padding: 4px; border-radius: 999px; background: rgba(255,255,255,.08); }
-.locale-switch > svg { margin: 0 5px; }
-.locale-switch button { min-height: 40px; border: 0; padding: 7px 9px; border-radius: 999px; color: #dbe6e2; background: transparent; cursor: pointer; font-size: .66rem; }
-.locale-switch button.active { color: #17302c; background: #fffaf0; font-weight: 750; }
+.locale-switch { display: inline-flex; align-items: center; gap: 7px; padding: 4px 7px; border-radius: 999px; background: rgba(255,255,255,.08); color: #dbe6e2; }
+.locale-switch > span { font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; }
+.locale-switch select { min-height: 44px; max-width: 10rem; border: 0; padding: 7px 28px 7px 10px; border-radius: 999px; color: #17302c; background: #fffaf0; cursor: pointer; font: inherit; font-size: .75rem; font-weight: 750; }
+
+[dir="rtl"] .locale-switch select { padding: 7px 10px 7px 28px; }
 
 main { width: min(1500px, calc(100% - 28px)); margin: 22px auto 50px; }
 .hero-panel { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(520px, 1.5fr); gap: 18px 28px; padding: clamp(20px, 3vw, 36px); border: 1px solid #d7d1c1; border-radius: 25px; background: linear-gradient(145deg, rgba(255,253,247,.98), rgba(248,244,233,.98)); box-shadow: var(--shadow); }
@@ -61,7 +62,7 @@ main { width: min(1500px, calc(100% - 28px)); margin: 22px auto 50px; }
 .start-row label > span { color: #3e5d55; font-size: .62rem; font-weight: 750; }
 .start-row input { width: 100%; padding: 11px 13px; border: 1px solid #cfc8b8; border-radius: 11px; color: var(--ink); background: #fff; }
 .start-row label small { color: #78847e; font-size: .55rem; }
-.seed-button, .start-button, .ghost-button, .confirm-button { min-height: 43px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 11px; padding: 9px 13px; cursor: pointer; font-size: .66rem; font-weight: 750; }
+.seed-button, .start-button, .ghost-button, .confirm-button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 11px; padding: 9px 13px; cursor: pointer; font-size: .66rem; font-weight: 750; }
 .seed-button, .ghost-button { border: 1px solid #cfc8b8; background: #fffdf8; }
 .start-button, .confirm-button { border: 1px solid #0b574a; color: white; background: linear-gradient(#137664, #0b5b4e); box-shadow: 0 6px 13px rgba(15,106,90,.18); }
 .notice { max-width: 900px; display: flex; align-items: center; gap: 8px; margin: 14px auto; padding: 10px 14px; border-radius: 12px; font-size: .68rem; }

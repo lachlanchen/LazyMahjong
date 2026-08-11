@@ -37,7 +37,7 @@ export function Tile({ tile, type, hidden = false, compact = false, selected = f
         onClick={onClick}
         disabled={disabled}
         aria-pressed={selected}
-        aria-label={label ?? tileType ?? 'concealed tile'}
+        aria-label={label ?? tileType}
         data-tile-id={tile?.id}
         data-tile-type={tileType}
       >
@@ -45,5 +45,5 @@ export function Tile({ tile, type, hidden = false, compact = false, selected = f
       </button>
     )
   }
-  return <span className={className} aria-label={label ?? (hidden ? 'concealed tile' : tileType)} data-tile-type={tileType}>{content}</span>
+  return <span className={className} aria-label={label ?? (hidden ? undefined : tileType)} data-tile-type={tileType}>{content}</span>
 }
