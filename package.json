@@ -7,11 +7,11 @@
   "author": "Lachlan Chen",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lachlanchen/Mahjong.git"
+    "url": "git+https://github.com/lachlanchen/LazyMahjong.git"
   },
-  "homepage": "https://github.com/lachlanchen/Mahjong#readme",
+  "homepage": "https://github.com/lachlanchen/LazyMahjong#readme",
   "bugs": {
-    "url": "https://github.com/lachlanchen/Mahjong/issues"
+    "url": "https://github.com/lachlanchen/LazyMahjong/issues"
   },
   "keywords": [
     "mahjong",

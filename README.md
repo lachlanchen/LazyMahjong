@@ -75,7 +75,7 @@ GitHub reads [`CITATION.cff`](CITATION.cff) to expose **Cite this repository**.
   title   = {Four Winds: Mahjong Decision Teacher},
   year    = {2026},
   version = {0.1.0},
-  url     = {https://github.com/lachlanchen/Mahjong}
+  url     = {https://github.com/lachlanchen/LazyMahjong}
 }
 ```
 
