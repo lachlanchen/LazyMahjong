@@ -7,6 +7,7 @@ import {
   type Action,
   type ActionCandidate,
   type CandidatePreview,
+  type CandidateRecommendation,
   type Discard,
   type GameConfig,
   type GameEvent,
@@ -19,7 +20,7 @@ import {
   type TileInstance,
   type TileType,
 } from './types'
-import { composeWall, isTerminalOrHonor, nextTileType, tileSort } from './tiles'
+import { composeWall, isTerminalOrHonor, nextTileType, tileGlyph, tileSort, tileTypeIndex } from './tiles'
 
 export class MahjongRuleError extends Error {
   constructor(public readonly code: 'UNAUTHORIZED_ACTOR' | 'STALE_CANDIDATE' | 'ILLEGAL_ACTION' | 'WALL_EXHAUSTED') {
@@ -129,11 +130,16 @@ function rawClaimActions(state: MahjongState, seat: Seat): Action[] {
   if (!discard || discard.by === seat) return []
   const hand = state.hands[seat]
   const actions: Action[] = []
-  if (isCompleteTypes([...hand.map((tile) => tile.type), discard.tile.type], state.melds[seat].length)) {
+  if (isCompleteTypes([...hand.map((tile) => tile.type), discard.tile.type], state.melds[seat].length, state.profile)) {
     actions.push({ kind: 'ron' })
   }
   const same = findTiles(hand, discard.tile.type, 3)
-  if (PROFILES[state.profile].allowsKan && same.length >= 3) {
+  // This teaching subset takes a kan supplement from the same undealt draw
+  // pile. With no tile left, that transition cannot be completed, so it must
+  // never be offered as an authoritative candidate. Pon and chi remain legal:
+  // both move directly to the caller's required discard, after which ordinary
+  // claim resolution runs and an all-pass branch ends exhaustively.
+  if (state.wall.length > 0 && PROFILES[state.profile].allowsKan && same.length >= 3) {
     actions.push({ kind: 'kan', tileIds: [same[0]!.id, same[1]!.id, same[2]!.id] })
   }
   if (PROFILES[state.profile].allowsPon && same.length >= 2) {
@@ -173,7 +179,7 @@ export function legalActions(state: MahjongState, requestedActorId: string): Act
   if (state.phase === 'discard') {
     const hand = state.hands[seat]
     const candidates = hand.map((tile) => actionCandidate(state, seat, { kind: 'discard', tileId: tile.id }, 'action.discard'))
-    if (isCompleteTypes(hand.map((tile) => tile.type), state.melds[seat].length)) {
+    if (isCompleteTypes(hand.map((tile) => tile.type), state.melds[seat].length, state.profile)) {
       candidates.unshift(actionCandidate(state, seat, { kind: 'tsumo' }, 'action.tsumo'))
     }
     return candidates
@@ -184,8 +190,9 @@ export function legalActions(state: MahjongState, requestedActorId: string): Act
       0,
       ...state.claimQueue.map((queuedSeat) => claimPriority(rawClaimActions(state, queuedSeat))),
     )
-    // A lower-priority call may never erase a later ron. A seat that can ron
-    // must either take that win or pass before pon/kan/chi are considered.
+    // A lower-priority call may never erase a later ron. A seat with an exact
+    // supported-shape completion must take it or pass before lower calls are
+    // considered. Scoring eligibility is deliberately outside this subset.
     const priorityActions = rawClaimActions(state, seat).filter(
       (action) => claimPriority([action]) === queuePriority,
     )
@@ -335,27 +342,46 @@ export function applyAction(state: MahjongState, candidate: ActionCandidate): Ma
 }
 
 export function publicView(state: MahjongState, viewerId: string): PublicGameView {
+  const viewerOwnsClaim = state.phase === 'claim' && viewerId === actorId(state.activeSeat)
+  // A claim queue is authority-private because membership proves something
+  // about concealed tiles. Non-claimants see the same public turn envelope as
+  // an ordinary all-pass advance until a call or completion is declared. The
+  // projection also handles a zero-tile wall, where all passes end the hand.
+  let visibleState = state
+  if (state.phase === 'claim' && !viewerOwnsClaim) {
+    while (visibleState.phase === 'claim') visibleState = applyKnownAction(visibleState, { kind: 'pass' })
+  }
+  const projectedPublicEvents = visibleState.events
+    .slice(state.events.length)
+    .filter((item) => item.kind !== 'pass')
+  const publicEvents = [...state.events, ...projectedPublicEvents]
+    .filter((item) => item.kind !== 'pass' || viewerId === actorId(item.seat))
+    .map((item, number) => ({
+      ...item,
+      number,
+      tile: item.kind === 'draw' && viewerId !== actorId(item.seat) ? null : structuredClone(item.tile),
+    }))
   const visible = {
-    sessionId: state.sessionId,
-    profile: state.profile,
-    dealer: state.dealer,
-    roundWind: state.roundWind,
-    activeSeat: state.activeSeat,
-    activeActorId: actorId(state.activeSeat),
-    phase: state.phase,
-    wallCount: state.wall.length,
-    turn: state.turn,
+    sessionId: visibleState.sessionId,
+    profile: visibleState.profile,
+    dealer: visibleState.dealer,
+    roundWind: visibleState.roundWind,
+    activeSeat: visibleState.activeSeat,
+    activeActorId: actorId(visibleState.activeSeat),
+    phase: visibleState.phase,
+    drawPileCount: visibleState.wall.length,
+    turn: visibleState.turn,
     players: SEATS.map((seat) => ({
       seat,
       actorId: actorId(seat),
-      hand: viewerId === actorId(seat) ? structuredClone(state.hands[seat]) : { hidden: true as const, count: state.hands[seat].length },
-      melds: structuredClone(state.melds[seat]),
-      river: structuredClone(state.rivers[seat]),
-      isActive: state.activeSeat === seat,
+      hand: viewerId === actorId(seat) ? structuredClone(visibleState.hands[seat]) : { hidden: true as const, count: visibleState.hands[seat].length },
+      melds: structuredClone(visibleState.melds[seat]),
+      river: structuredClone(visibleState.rivers[seat]),
+      isActive: visibleState.activeSeat === seat,
     })),
-    lastDiscard: structuredClone(state.lastDiscard),
-    events: state.events.map((item) => ({ ...item, tile: item.kind === 'draw' && viewerId !== actorId(item.seat) ? null : structuredClone(item.tile) })),
-    result: structuredClone(state.result),
+    lastDiscard: structuredClone(visibleState.lastDiscard),
+    events: publicEvents,
+    result: structuredClone(visibleState.result),
   }
   return {
     ...visible,
@@ -378,7 +404,7 @@ export function visibleTileCounts(state: MahjongState, viewer: Seat): Partial<Re
 }
 
 export function analyzeSeat(state: MahjongState, seat: Seat): HandAnalysis {
-  return analyzeHand(state.hands[seat], state.melds[seat].length, visibleTileCounts(state, seat))
+  return analyzeHand(state.hands[seat], state.melds[seat].length, visibleTileCounts(state, seat), state.profile)
 }
 
 function discardSafety(state: MahjongState, actor: Seat, type: TileType): number {
@@ -391,6 +417,152 @@ function actionTile(state: MahjongState, candidate: ActionCandidate): TileInstan
   return state.hands[candidate.seat].find((tile) => tile.id === action.tileId) ?? null
 }
 
+function analysisAfterCandidate(state: MahjongState, candidate: ActionCandidate): HandAnalysis | null {
+  if (candidate.action.kind === 'draw') return null
+  if (candidate.action.kind === 'ron') {
+    const offered = state.lastDiscard?.tile
+    return offered
+      ? analyzeHand(
+          [...state.hands[candidate.seat], offered],
+          state.melds[candidate.seat].length,
+          visibleTileCounts(state, candidate.seat),
+          state.profile,
+        )
+      : analyzeSeat(state, candidate.seat)
+  }
+  if (candidate.action.kind === 'tsumo') {
+    return analyzeSeat(state, candidate.seat)
+  }
+  const simulated = applyKnownAction(state, candidate.action)
+  if (candidate.action.kind === 'pass' && simulated.result?.kind === 'exhaustive-draw') return null
+  return analyzeHand(
+    simulated.hands[candidate.seat],
+    simulated.melds[candidate.seat].length,
+    visibleTileCounts(simulated, candidate.seat),
+    state.profile,
+  )
+}
+
+function compareTuple(left: readonly (number | string)[], right: readonly (number | string)[]): number {
+  const length = Math.max(left.length, right.length)
+  for (let index = 0; index < length; index += 1) {
+    const a = left[index] ?? 0
+    const b = right[index] ?? 0
+    const difference = typeof a === 'number' && typeof b === 'number'
+      ? a - b
+      : String(a).localeCompare(String(b))
+    if (difference !== 0) return difference
+  }
+  return 0
+}
+
+function candidateQualityTuple(
+  state: MahjongState,
+  candidate: ActionCandidate,
+  after: HandAnalysis | null,
+): readonly (number | string)[] {
+  const action = candidate.action
+  if (action.kind === 'tsumo' || action.kind === 'ron') return [-100, action.kind]
+  if (action.kind === 'draw') return [-90, action.kind]
+
+  // Advanced value catalogs are intentionally absent. At a call window, Pass
+  // is therefore the cautious authored study lead; calls remain inspectable
+  // and are never declared objectively best from shape distance alone.
+  if (state.phase === 'claim' && action.kind === 'pass') return [-20, action.kind]
+  if (action.kind === 'chi' || action.kind === 'pon' || action.kind === 'kan') {
+    return [
+      -10,
+      after?.shanten ?? 99,
+    ]
+  }
+
+  const tile = actionTile(state, candidate)
+  return [
+    0,
+    after?.shanten ?? 99,
+    -(after?.ukeire ?? 0),
+    -(after?.improvements.length ?? 0),
+  ]
+}
+
+function candidateTieBreak(state: MahjongState, candidate: ActionCandidate): readonly (number | string)[] {
+  const tile = actionTile(state, candidate)
+  return tile
+    ? [tileTypeIndex(tile.type), tile.copy]
+    : [canonicalAction(candidate.action)]
+}
+
+export interface RankedCandidate {
+  candidate: ActionCandidate
+  analysisAfter: HandAnalysis | null
+  recommendation: CandidateRecommendation
+}
+
+function recommendationBasis(action: Action): Pick<CandidateRecommendation, 'evidence' | 'labelKey' | 'helpKey'> {
+  if (action.kind === 'draw') {
+    return { evidence: 'exact', labelKey: 'candidate.lead.exact', helpKey: 'candidate.leadHelp.draw' }
+  }
+  if (action.kind === 'ron' || action.kind === 'tsumo') {
+    return { evidence: 'exact', labelKey: 'candidate.lead.shapeExact', helpKey: 'candidate.leadHelp.complete' }
+  }
+  if (action.kind === 'pass') {
+    return { evidence: 'authored', labelKey: 'candidate.lead.authored', helpKey: 'candidate.leadHelp.pass' }
+  }
+  if (action.kind === 'chi' || action.kind === 'pon' || action.kind === 'kan') {
+    return { evidence: 'calculated', labelKey: 'candidate.lead.calculated', helpKey: 'candidate.leadHelp.call' }
+  }
+  return { evidence: 'calculated', labelKey: 'candidate.lead.calculated', helpKey: 'candidate.leadHelp.discard' }
+}
+
+/**
+ * Orders only current legal candidates. Discards use supported-shape shanten,
+ * unseen-copy ukeire, then improving-kind count; canonical tile order breaks
+ * only otherwise equal ties. No wall order or concealed opponent hand is
+ * consulted, and the output never mutates the table.
+ */
+export function rankLegalCandidates(
+  state: MahjongState,
+  supplied: readonly ActionCandidate[] = legalActions(state, actorId(state.activeSeat)),
+): RankedCandidate[] {
+  const legal = legalActions(state, actorId(state.activeSeat))
+  const accepted = supplied.flatMap((candidate) => {
+    const authoritative = legal.find((item) => item.id === candidate.id)
+    return authoritative && canonicalAction(candidate) === canonicalAction(authoritative) ? [authoritative] : []
+  })
+  const ranked = accepted.map((candidate) => {
+    const analysisAfter = analysisAfterCandidate(state, candidate)
+    return {
+      candidate,
+      analysisAfter,
+      quality: candidateQualityTuple(state, candidate, analysisAfter),
+      tieBreak: candidateTieBreak(state, candidate),
+    }
+  }).sort((left, right) => compareTuple(left.quality, right.quality) || compareTuple(left.tieBreak, right.tieBreak))
+
+  const bestQuality = ranked[0]?.quality
+  let displayedRank = 1
+
+  return ranked.map((item, index) => {
+    if (index > 0 && compareTuple(item.quality, ranked[index - 1]!.quality) !== 0) displayedRank = index + 1
+    return {
+      candidate: item.candidate,
+      analysisAfter: item.analysisAfter,
+      recommendation: {
+        rank: displayedRank,
+        total: ranked.length,
+        suggested: bestQuality != null && compareTuple(item.quality, bestQuality) === 0,
+        ...recommendationBasis(item.candidate.action),
+        reasonKey: `preview.${item.candidate.action.kind}.why`,
+        params: item.analysisAfter ? {
+          shanten: item.analysisAfter.shanten ?? 0,
+          ukeire: item.analysisAfter.ukeire,
+          kinds: item.analysisAfter.improvements.length,
+        } : {},
+      },
+    }
+  })
+}
+
 function facetsForPreview(
   state: MahjongState,
   candidate: ActionCandidate,
@@ -399,20 +571,49 @@ function facetsForPreview(
 ): TeachingFacet[] {
   const tile = actionTile(state, candidate)
   const safetyCount = tile ? discardSafety(state, candidate.seat, tile.type) : 0
+  const publicCopies = tile ? visibleTileCounts(state, candidate.seat)[tile.type] ?? 0 : 0
   const profile = PROFILES[state.profile]
-  return [
-    {
-      id: 'shape', evidence: 'calculated', titleKey: 'facet.shape.title', bodyKey: 'facet.shape.body',
-      params: { before: before?.shapeScore ?? 0, after: after?.shapeScore ?? before?.shapeScore ?? 0, pairs: after?.pairs ?? before?.pairs ?? 0, connected: after?.connected ?? before?.connected ?? 0 },
-    },
-    {
-      id: 'ukeire', evidence: 'calculated', titleKey: 'facet.ukeire.title', bodyKey: 'facet.ukeire.body',
-      params: { count: after?.ukeire ?? before?.ukeire ?? 0, kinds: after?.improvingTiles.length ?? before?.improvingTiles.length ?? 0, tenpai: after?.tenpai ? 1 : 0 },
-    },
-    {
-      id: 'safety', evidence: tile ? 'exact' : 'authored', titleKey: 'facet.safety.title', bodyKey: tile ? 'facet.safety.body' : 'facet.safety.not-discard',
-      params: { opponents: safetyCount, tile: tile?.type ?? 'none' },
-    },
+  const facets: TeachingFacet[] = []
+  if (after) {
+    facets.push({
+      id: 'shape', evidence: 'calculated', titleKey: 'facet.shape.title', bodyKey: 'facet.shape.development',
+      params: {
+        before: before?.shanten ?? 0,
+        after: after.shanten ?? 0,
+        beforeMode: before?.mode ?? 'unsupported',
+        afterMode: after.mode,
+        route: after.bestRoute ?? before?.bestRoute ?? 'standard',
+        pairs: after.pairs,
+      },
+    })
+  }
+  if (after?.mode === 'draw') {
+    facets.push({
+      id: 'ukeire', evidence: 'calculated', titleKey: 'facet.ukeire.title', bodyKey: 'facet.ukeire.development',
+      params: {
+        count: after.ukeire,
+        kinds: after.improvements.length,
+        tenpai: after.tenpai ? 1 : 0,
+      },
+    })
+  }
+  if (tile) {
+    facets.push({
+      id: 'safety', evidence: 'exact', titleKey: 'facet.safety.title', bodyKey: 'facet.safety.body',
+      params: { opponents: safetyCount, visible: publicCopies, tile: tile.type },
+    })
+  }
+  if (candidate.action.kind === 'chi' || candidate.action.kind === 'pon' || candidate.action.kind === 'kan' || candidate.action.kind === 'pass') {
+    facets.push({
+      id: 'openness', evidence: 'exact', titleKey: 'facet.openness.title', bodyKey: 'facet.openness.body',
+      params: {
+        before: before?.openMeldCount ?? state.melds[candidate.seat].length,
+        after: after?.openMeldCount ?? state.melds[candidate.seat].length,
+        action: candidate.action.kind,
+      },
+    })
+  }
+  facets.push(
     {
       id: 'value', evidence: 'authored', titleKey: 'facet.value.title', bodyKey: 'facet.value.body',
       params: { profile: profile.id, tileClass: tile ? (isTerminalOrHonor(tile.type) ? 'terminal-or-honor' : 'simple') : 'none' },
@@ -421,7 +622,8 @@ function facetsForPreview(
       id: 'tempo', evidence: 'exact', titleKey: 'facet.tempo.title', bodyKey: 'facet.tempo.body',
       params: { wall: state.wall.length, turn: state.turn, phase: state.phase },
     },
-  ]
+  )
+  return facets
 }
 
 export function previewAction(state: MahjongState, candidate: ActionCandidate): CandidatePreview {
@@ -433,24 +635,47 @@ export function previewAction(state: MahjongState, candidate: ActionCandidate): 
   // A draw preview must not expose the server-only next tile. It therefore
   // describes the exact transition envelope without applying the hidden draw.
   const simulated = authoritative.action.kind === 'draw' ? null : applyKnownAction(state, authoritative.action)
-  const handAfter = simulated ? structuredClone(simulated.hands[authoritative.seat]) : null
-  const after = simulated && simulated.phase !== 'finished'
-    ? analyzeHand(simulated.hands[authoritative.seat], simulated.melds[authoritative.seat].length, visibleTileCounts(simulated, authoritative.seat))
-    : simulated
-      ? analyzeHand(simulated.hands[authoritative.seat], simulated.melds[authoritative.seat].length, visibleTileCounts(simulated, authoritative.seat))
-      : null
+  const offeredCompletionTile = authoritative.action.kind === 'ron' ? state.lastDiscard?.tile ?? null : null
+  const handAfter = simulated
+    ? structuredClone(offeredCompletionTile ? [...simulated.hands[authoritative.seat], offeredCompletionTile] : simulated.hands[authoritative.seat])
+    : null
+  const terminalPass = authoritative.action.kind === 'pass' && simulated?.result?.kind === 'exhaustive-draw'
+  const after = simulated && !terminalPass
+    ? analyzeHand(
+        offeredCompletionTile ? [...simulated.hands[authoritative.seat], offeredCompletionTile] : simulated.hands[authoritative.seat],
+        simulated.melds[authoritative.seat].length,
+        visibleTileCounts(simulated, authoritative.seat),
+        state.profile,
+      )
+    : null
   const tile = actionTile(state, authoritative)
+  const recommendation = rankLegalCandidates(state).find((item) => item.candidate.id === authoritative.id)?.recommendation
+    ?? {
+      rank: 1,
+      total: 1,
+      suggested: true,
+      ...recommendationBasis(authoritative.action),
+      reasonKey: `preview.${authoritative.action.kind}.why`,
+      params: {},
+    }
   const params: Record<string, string | number> = {
     action: authoritative.action.kind,
     tile: tile?.type ?? 'hidden',
     beforeUkeire: before.ukeire,
-    afterUkeire: after?.ukeire ?? before.ukeire,
+    beforeShanten: before.shanten ?? 0,
     wall: state.wall.length,
+  }
+  if (after) {
+    params.afterUkeire = after.ukeire
+    params.afterShanten = after.shanten ?? 0
+    params.afterKinds = after.improvements.length
+    params.improving = after.improvements.slice(0, 8).map((item) => tileGlyph(item.type)).join(' · ') || '—'
   }
   return {
     candidate: authoritative,
     legal: true,
     hypothetical: true,
+    analysisToken: publicView(state, actorId(authoritative.seat)).viewToken,
     titleKey: `preview.${authoritative.action.kind}.title`,
     whyKey: `preview.${authoritative.action.kind}.why`,
     changesKey: `preview.${authoritative.action.kind}.changes`,
@@ -462,6 +687,10 @@ export function previewAction(state: MahjongState, candidate: ActionCandidate): 
     handAfter,
     analysisBefore: before,
     analysisAfter: after,
+    analysisAfterUnavailableKey: authoritative.action.kind === 'draw'
+      ? 'analysis.afterHiddenDrawUnavailable'
+      : terminalPass ? 'result.exhaustive' : null,
+    recommendation,
   }
 }
 
@@ -471,8 +700,8 @@ export function evaluate(state: MahjongState): GameResult | null {
 
 export function chooseDeterministicBotAction(state: MahjongState): ActionCandidate {
   const candidates = legalActions(state, actorId(state.activeSeat))
-  const win = candidates.find((candidate) => candidate.action.kind === 'tsumo' || candidate.action.kind === 'ron')
-  if (win) return win
+  const completion = candidates.find((candidate) => candidate.action.kind === 'tsumo' || candidate.action.kind === 'ron')
+  if (completion) return completion
   const forced = candidates.find((candidate) => candidate.action.kind === 'draw')
   if (forced) return forced
   const pass = candidates.find((candidate) => candidate.action.kind === 'pass')
@@ -480,9 +709,14 @@ export function chooseDeterministicBotAction(state: MahjongState): ActionCandida
   const discards = candidates.filter((candidate) => candidate.action.kind === 'discard')
   if (discards.length > 0) {
     // Opponents are pacing actors, not teaching engines. Keep their policy
-    // cheap, replayable, and clearly non-model: choose the lexicographically
-    // first state-bound discard rather than running private analysis.
-    return [...discards].sort((left, right) => left.id.localeCompare(right.id))[0]!
+    // cheap, replayable, and clearly non-model. Ordering may use only the
+    // actor's own canonical tile, never a full-state authority digest.
+    return [...discards].sort((left, right) => {
+      const leftTile = actionTile(state, left)
+      const rightTile = actionTile(state, right)
+      if (!leftTile || !rightTile) return canonicalAction(left.action).localeCompare(canonicalAction(right.action))
+      return tileTypeIndex(leftTile.type) - tileTypeIndex(rightTile.type) || leftTile.copy - rightTile.copy
+    })[0]!
   }
   if (candidates[0]) return candidates[0]
   throw new MahjongRuleError('ILLEGAL_ACTION')

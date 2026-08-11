@@ -24,10 +24,10 @@ The current table separates the learner’s concealed hand, legal choices, non-m
 
 ## What the table teaches
 
-- A seeded 136-tile wall, four seats, legal draws and discards, call windows, chi/chow, pon/pung, kan/kong, ron, and tsumo shape completion.
-- Standard four-groups-and-a-pair and seven-pairs completion, exact waits, visible-copy ukeire, a comparative shape index, and visible river facts.
-- Riichi, MCR, and Hong Kong profiles expose their scoring boundaries before and during play; unsupported yaku, fan, payments, flowers, and house rules are never presented as authoritative.
-- The learning loop is consistent: inspect a state-bound legal candidate, compare a hypothetical preview, then confirm explicitly.
+- A seeded 136-tile source modeled as one generic undealt draw pile, four seats, legal draws and discards, call windows, chi/chow, pon/pung, kan/kong, and Ron/Tsumo supported-shape completion opportunities. Riichi dead-wall and dora mechanics are not modeled.
+- Standard four-groups-and-a-pair completion plus profile-aware seven pairs: seven distinct pair kinds in Riichi and this Hong Kong lesson, while MCR counts a concealed four-of-a-kind as two pair units. Supported-shape waits, shanten, unseen-copy ukeire, visible role legends, and the 34-tile map all use the selected profile.
+- Riichi, MCR, and Hong Kong profiles expose their teaching-subset boundaries before and during play. Ron or Tsumo ends the subset hand on supported tile shape only; it does not establish scoring, yaku/fan, or furiten eligibility.
+- A fresh hand highlights every tied calculated lead without selecting it. Ranking uses supported-shape shanten, unseen-copy ukeire, then improving-kind count; forced draws are exact, completion leads are exact only for supported shape/action legality, and Pass is authored. Only Confirm mutates the table.
 
 ## Repository map
 
@@ -38,7 +38,7 @@ The current table separates the learner’s concealed hand, legal choices, non-m
 | [`src/App.tsx`](src/App.tsx) | The multilingual setup, table, decision lab, chronicle, and saved-session interface. |
 | [`docs/framework-contract.md`](docs/framework-contract.md) | The exact supported rules and conspicuous scoring gaps. |
 | [`docs/engine-lane.md`](docs/engine-lane.md) | The optional disabled engine lane and reviewed integration boundary. |
-| [`docs/images/app.png`](docs/images/app.png) | Current application screenshot. |
+| [`docs/images/app.png`](docs/images/app.png) | Reference screenshot; refresh it after browser validation of this source revision. |
 
 ## Quick start
 
@@ -55,10 +55,10 @@ The development and preview servers are pinned to `127.0.0.1:5182` and fail rath
 
 ## Authority, privacy, and evidence
 
-- The interface renders only a viewer-redacted public view; other hands, wall order, seed, and private evaluation remain hidden.
+- The interface renders only a viewer-redacted public view; other hands, wall order, seed, private evaluation, claim eligibility, and hidden Pass events remain concealed until a call or completion becomes public.
 - Opaque candidate IDs bind the complete state token, actor, and canonical action. A coordinate, tile label, model, or stale candidate cannot authorize mutation.
-- Preview is hypothetical. The next wall tile stays hidden until a legal draw is explicitly confirmed.
-- Exact, calculated, authored, engine, model, and analogy evidence remain separately labeled. Unsupported profile scoring stays visible rather than being guessed.
+- Preview is hypothetical. The next tile in the generic draw pile stays hidden until a legal Draw is explicitly confirmed, so post-Draw calculated shape analysis is unavailable beforehand.
+- Exact, calculated, authored, engine, model, and analogy evidence remain separately labeled. “Unseen copies” means four minus tiles visible to that viewer—not known undealt draw-pile contents or draw probability—and unsupported profile scoring is never guessed.
 
 ## Verification
 

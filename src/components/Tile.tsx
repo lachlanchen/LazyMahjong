@@ -7,13 +7,18 @@ interface TileProps {
   hidden?: boolean
   compact?: boolean
   selected?: boolean
+  suggested?: boolean
   claimed?: boolean
   disabled?: boolean
   onClick?: () => void
+  onPointerEnter?: () => void
+  onPointerLeave?: () => void
+  onFocus?: () => void
+  onBlur?: () => void
   label?: string
 }
 
-export function Tile({ tile, type, hidden = false, compact = false, selected = false, claimed = false, disabled = false, onClick, label }: TileProps) {
+export function Tile({ tile, type, hidden = false, compact = false, selected = false, suggested = false, claimed = false, disabled = false, onClick, onPointerEnter, onPointerLeave, onFocus, onBlur, label }: TileProps) {
   const tileType = tile?.type ?? type
   const suit = tileType ? suitOf(tileType) : null
   const rank = tileType ? rankOf(tileType) : null
@@ -25,7 +30,7 @@ export function Tile({ tile, type, hidden = false, compact = false, selected = f
     </>
   ) : null
   const className = [
-    'mahjong-tile', hidden ? 'hidden-tile' : '', compact ? 'compact-tile' : '', selected ? 'selected' : '',
+    'mahjong-tile', hidden ? 'hidden-tile' : '', compact ? 'compact-tile' : '', selected ? 'selected' : '', suggested ? 'suggested' : '',
     claimed ? 'claimed' : '', tileType ? `tile-${tileType}` : '', onClick ? 'interactive' : '',
   ].filter(Boolean).join(' ')
 
@@ -35,9 +40,13 @@ export function Tile({ tile, type, hidden = false, compact = false, selected = f
         type="button"
         className={className}
         onClick={onClick}
+        onPointerEnter={onPointerEnter}
+        onPointerLeave={onPointerLeave}
+        onFocus={onFocus}
+        onBlur={onBlur}
         disabled={disabled}
         aria-pressed={selected}
-        aria-label={label ?? tileType}
+        aria-label={label ?? (tileType ? tileGlyph(tileType) : undefined)}
         data-tile-id={tile?.id}
         data-tile-type={tileType}
       >
@@ -45,5 +54,5 @@ export function Tile({ tile, type, hidden = false, compact = false, selected = f
       </button>
     )
   }
-  return <span className={className} aria-label={label ?? (hidden ? undefined : tileType)} data-tile-type={tileType}>{content}</span>
+  return <span className={className} aria-label={label ?? (hidden || !tileType ? undefined : tileGlyph(tileType))} data-tile-type={tileType}>{content}</span>
 }

@@ -10,6 +10,7 @@ export const PROFILES: Record<ProfileId, ProfileRules> = {
     allowsChi: true,
     allowsPon: true,
     allowsKan: true,
+    sevenPairsMode: 'distinct-pairs',
     supportsExactAdvancedScoring: false,
   },
   mcr: {
@@ -21,6 +22,7 @@ export const PROFILES: Record<ProfileId, ProfileRules> = {
     allowsChi: true,
     allowsPon: true,
     allowsKan: true,
+    sevenPairsMode: 'quad-as-two-pairs',
     supportsExactAdvancedScoring: false,
   },
   'hong-kong': {
@@ -32,6 +34,9 @@ export const PROFILES: Record<ProfileId, ProfileRules> = {
     allowsChi: true,
     allowsPon: true,
     allowsKan: true,
+    // This teaching profile deliberately chooses the common distinct-pairs
+    // interpretation. House rules that count a quad twice remain unsupported.
+    sevenPairsMode: 'distinct-pairs',
     supportsExactAdvancedScoring: false,
   },
 }

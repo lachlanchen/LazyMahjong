@@ -24,10 +24,10 @@ La table sépare clairement la main cachée de l'apprenant, les choix autorisés
 
 ## Ce que la table enseigne
 
-- Un mur de 136 tuiles défini par une graine, quatre joueurs, des pioches et défausses autorisées, des phases de déclaration, chi/chow, pon/pung, kan/kong, ron et achèvement par tsumo.
-- Achèvement standard en quatre groupes et une paire ou en sept paires, attentes exactes, ukeire calculé sur les exemplaires visibles, indice de forme comparatif et faits observables dans les rangées de défausse.
-- Les profils Riichi, MCR et Hong Kong indiquent leurs limites de score avant et pendant le jeu ; les yaku, fan, paiements, fleurs et règles maison non pris en charge ne sont jamais présentés comme autoritatifs.
-- La boucle d'apprentissage est constante : examiner un candidat autorisé lié à l'état, comparer un aperçu hypothétique, puis confirmer explicitement.
+- Une source de 136 tuiles définie par une graine et modélisée comme une pioche générique non distribuée, quatre joueurs, pioches, défausses et appels autorisés, et occasions Ron/Tsumo d’achever une forme prise en charge. Mur mort et dora Riichi ne sont pas modélisés.
+- Forme standard en quatre groupes et une paire, plus sept paires selon le profil : sept sortes distinctes en Riichi et dans cette leçon Hong Kong ; MCR compte un carré caché comme deux unités de paire. Attentes, shanten, ukeire des copies non vues et carte des 34 sortes suivent le profil.
+- Les profils affichent la limite du sous-ensemble pédagogique. Ron/Tsumo termine la main uniquement sur une forme prise en charge ; il n’établit ni admissibilité au score, ni yaku/fan, ni furiten.
+- Toutes les pistes ex æquo sont visibles sans présélection. Le classement suit shanten, copies utiles non vues puis nombre de sortes ; la pioche imposée est exacte, l’achèvement seulement pour forme/légalité, et Passer est rédigé.
 
 ## Carte du référentiel
 
@@ -38,7 +38,7 @@ La table sépare clairement la main cachée de l'apprenant, les choix autorisés
 | [`src/App.tsx`](../src/App.tsx) | La configuration multilingue, le tableau, le laboratoire de décision, la chronique et l'interface de session enregistrée. |
 | [`docs/framework-contract.md`](../docs/framework-contract.md) | Les règles exactes prises en charge et les écarts de notation évidents. |
 | [`docs/engine-lane.md`](../docs/engine-lane.md) | Le canal moteur facultatif, désactivé par défaut, et sa limite d'intégration révisée. |
-| [`docs/images/app.png`](../docs/images/app.png) | Capture d'écran de l'application actuelle. |
+| [`docs/images/app.png`](../docs/images/app.png) | Capture de référence ; à actualiser après validation navigateur de cette révision. |
 
 ## Démarrage rapide
 
@@ -55,10 +55,10 @@ Les serveurs de développement et d’aperçu sont fixés sur `127.0.0.1:5182` e
 
 ## Autorité, confidentialité et preuves
 
-- L'interface ne restitue que la vue publique adaptée à l'observateur ; les autres mains, l'ordre du mur, la graine et les évaluations privées restent cachés.
+- L’interface ne restitue que la vue publique adaptée à l’observateur ; autres mains, ordre du mur, graine, évaluations, admissibilité d’un appel et passes cachées restent secrets jusqu’à un appel ou achèvement public.
 - Les identifiants opaques de candidat lient le jeton d'état complet, le joueur et l'action canonique. Une coordonnée, un nom de tuile, un modèle ou un candidat périmé ne peut pas autoriser un changement d'état.
 - L'aperçu est hypothétique. La prochaine tuile du mur reste cachée jusqu'à la confirmation explicite d'une pioche autorisée.
-- Les preuves exactes, calculées, rédigées, de moteur, de modèle et d'analogie restent étiquetées séparément. La notation des profils non pris en charge reste visible plutôt que devinée.
+- Faits exacts, calculs, conseils rédigés, moteur, modèle et analogie restent séparés. « Copies non vues » signifie quatre moins les tuiles visibles par cet observateur, pas le contenu connu de la pioche non distribuée ni une probabilité ; aucun score non pris en charge n’est inventé.
 
 ## Vérification
 

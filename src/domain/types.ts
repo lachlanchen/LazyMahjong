@@ -70,6 +70,7 @@ export interface GameEvent {
 
 export interface GameResult {
   kind: 'tsumo' | 'ron' | 'exhaustive-draw'
+  /** Schema-compatible name for the supported-shape completer; not a scoring-authoritative winner. */
   winner: Seat | null
   from: Seat | null
   exactShape: boolean
@@ -105,6 +106,7 @@ export interface ProfileRules {
   allowsChi: true
   allowsPon: true
   allowsKan: true
+  sevenPairsMode: 'distinct-pairs' | 'quad-as-two-pairs'
   supportsExactAdvancedScoring: false
 }
 
@@ -135,7 +137,8 @@ export interface PublicGameView {
   activeSeat: Seat
   activeActorId: string
   phase: GamePhase
-  wallCount: number
+  /** Undealt tiles remaining in this teaching subset's single draw pile. */
+  drawPileCount: number
   turn: number
   players: PublicPlayerView[]
   lastDiscard: Discard | null
@@ -146,29 +149,77 @@ export interface PublicGameView {
 }
 
 export interface TeachingFacet {
-  id: 'shape' | 'ukeire' | 'safety' | 'value' | 'tempo'
+  id: 'shape' | 'ukeire' | 'safety' | 'value' | 'tempo' | 'openness'
   evidence: EvidenceKind
   titleKey: string
   bodyKey: string
   params: Record<string, string | number>
 }
 
+export type HandAnalysisMode = 'draw' | 'discard' | 'complete' | 'unsupported'
+export type HandRoute = 'standard' | 'seven-pairs'
+export type TileFamily = 'characters' | 'circles' | 'bamboo' | 'honors'
+export type ShapeRole = 'set' | 'pair' | 'double-pair' | 'connected' | 'isolated'
+
+export interface ImprovementTile {
+  type: TileType
+  visibleRemaining: number
+  shantenAfterDraw: number
+  completesShape: boolean
+}
+
+export interface ShapeTile {
+  type: TileType
+  copies: number
+  role: ShapeRole
+}
+
+export interface ShapeFamilyAnalysis {
+  family: TileFamily
+  tiles: ShapeTile[]
+  pairKinds: number
+  connectedTiles: number
+  isolatedTiles: number
+}
+
 export interface HandAnalysis {
   complete: boolean
   tenpai: boolean
+  mode: HandAnalysisMode
+  shanten: number | null
+  standardShanten: number | null
+  sevenPairsShanten: number | null
+  bestRoute: HandRoute | null
   waits: TileType[]
   ukeire: number
   improvingTiles: TileType[]
-  shapeScore: number
+  improvements: ImprovementTile[]
+  visibleRemaining: Record<TileType, number>
+  families: ShapeFamilyAnalysis[]
+  concealedTileCount: number
+  openMeldCount: number
   pairs: number
   connected: number
   isolated: number
+}
+
+export interface CandidateRecommendation {
+  rank: number
+  total: number
+  suggested: boolean
+  evidence: Extract<EvidenceKind, 'exact' | 'calculated' | 'authored'>
+  labelKey: string
+  helpKey: string
+  reasonKey: string
+  params: Record<string, string | number>
 }
 
 export interface CandidatePreview {
   candidate: ActionCandidate
   legal: boolean
   hypothetical: true
+  /** Binds calculated teaching to the same viewer-redacted position. */
+  analysisToken: string
   titleKey: string
   whyKey: string
   changesKey: string
@@ -180,6 +231,9 @@ export interface CandidatePreview {
   handAfter: TileInstance[] | null
   analysisBefore: HandAnalysis | null
   analysisAfter: HandAnalysis | null
+  /** Explains why a post-action calculation is deliberately unavailable. */
+  analysisAfterUnavailableKey: string | null
+  recommendation: CandidateRecommendation
 }
 
 export interface ProcessedRequest {
@@ -204,7 +258,6 @@ export interface SessionSummary {
   profile: ProfileId
   seedLabel: string
   viewerSeat: Seat
-  revision: number
   turn: number
   phase: GamePhase
   updatedAt: string

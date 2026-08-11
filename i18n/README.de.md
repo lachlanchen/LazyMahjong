@@ -24,10 +24,10 @@ Der Tisch zeigt die verdeckte Hand des Lernenden, zulässige Aktionen, die Vorsc
 
 ## Was der Spieltisch lehrt
 
-- Eine durch Seed bestimmte Mauer mit 136 Steinen, vier Plätze, zulässige Ziehungen und Abwürfe, Meldungsfenster sowie Abschluss durch Chi/Chow, Pon/Pung, Kan/Kong, Ron und Tsumo.
-- Standardabschluss mit vier Gruppen und einem Paar oder sieben Paaren, genaue Wartesteine, Ukeire anhand sichtbarer Exemplare, ein vergleichender Formindex und sichtbare Daten aus den Ablagereihen.
-- Die Profile Riichi, MCR und Hong Kong legen ihre Punktegrenzen vor und während des Spiels offen. Nicht unterstützte Yaku-, Fan-, Zahlungs-, Blumen- und Hausregeln werden niemals als maßgeblich dargestellt.
-- Die Lernschleife ist einheitlich: einen an den Zustand gebundenen zulässigen Kandidaten prüfen, eine hypothetische Vorschau vergleichen und dann ausdrücklich bestätigen.
+- Eine durch Seed bestimmte Quelle mit 136 Steinen, modelliert als allgemeiner nicht ausgeteilter Nachziehstapel, vier Plätze, zulässige Züge, Abwürfe und Meldungen sowie Ron/Tsumo-Gelegenheiten zum unterstützten Formabschluss. Toter Wall und Dora werden nicht modelliert.
+- Standardform mit vier Gruppen und Paar plus profilabhängige sieben Paare: sieben verschiedene Sorten in Riichi und dieser Hongkong-Lektion; MCR zählt einen verdeckten Vierling als zwei Paareinheiten. Wartesteine, Shanten, Ukeire ungesehener Exemplare und 34-Sorten-Karte folgen dem Profil.
+- Die Profile legen den Lehrumfang offen. Ron/Tsumo beendet die Hand nur bei unterstützter Steinform und belegt weder Wertung noch Yaku/Fan oder Furiten.
+- Alle gleichrangigen Favoriten erscheinen ohne Vorauswahl. Rangfolge: Shanten, ungesehenes Ukeire, Zahl verbessernder Sorten; erzwungenes Ziehen ist exakt, Abschluss nur für Form/Legalität, Passen ein verfasster Hinweis.
 
 ## Repository-Karte
 
@@ -38,7 +38,7 @@ Der Tisch zeigt die verdeckte Hand des Lernenden, zulässige Aktionen, die Vorsc
 | [`src/App.tsx`](../src/App.tsx) | Die mehrsprachige Benutzeroberfläche für Setup, Spieltisch, Entscheidungslabor, Chronik und gespeicherte Sitzungen. |
 | [`docs/framework-contract.md`](../docs/framework-contract.md) | Die genauen unterstützten Regeln und auffälligen Punktelücken. |
 | [`docs/engine-lane.md`](../docs/engine-lane.md) | Der standardmäßig deaktivierte optionale Engine-Kanal und die überprüfte Integrationsgrenze. |
-| [`docs/images/app.png`](../docs/images/app.png) | Aktueller Anwendungs-Screenshot. |
+| [`docs/images/app.png`](../docs/images/app.png) | Referenzbild; nach der Browserprüfung dieser Quellrevision aktualisieren. |
 
 ## Schnellstart
 
@@ -55,10 +55,10 @@ Entwicklungs- und Vorschauserver sind fest auf `127.0.0.1:5182` eingestellt und 
 
 ## Autorität, Privatsphäre und Beweise
 
-- Die Oberfläche zeigt nur die für den Betrachter bereinigte öffentliche Ansicht; andere Hände, Mauerreihenfolge, Seed und private Bewertungen bleiben verborgen.
+- Die Oberfläche zeigt nur die bereinigte öffentliche Ansicht; andere Hände, Mauerreihenfolge, Seed, private Bewertung, Rufberechtigung und verdeckte Pass-Ereignisse bleiben bis zu einem öffentlichen Ruf oder Abschluss verborgen.
 - Undurchsichtige Kandidaten-IDs binden das vollständige Zustands-Token, den Akteur und die kanonische Aktion. Koordinaten, Steinbezeichnungen, Modelle oder veraltete Kandidaten können keine Zustandsänderung autorisieren.
 - Die Vorschau ist hypothetisch. Der nächste Stein der Mauer bleibt verborgen, bis ein zulässiges Ziehen ausdrücklich bestätigt wird.
-- Exakte, berechnete, verfasste, Engine-, Modell- und Analogiebeweise bleiben separat gekennzeichnet. Nicht unterstützte Profilbewertungen bleiben sichtbar und werden nicht erraten.
+- Exakt, berechnet, verfasst, Engine, Modell und Analogie bleiben getrennt. „Ungesehene Exemplare“ bedeutet vier minus für diesen Betrachter sichtbare Steine, nicht bekannter Inhalt des nicht ausgeteilten Nachziehstapels oder Ziehwahrscheinlichkeit; fehlende Wertung wird nie geraten.
 
 ## Überprüfung
 

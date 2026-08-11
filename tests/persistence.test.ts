@@ -141,4 +141,21 @@ describe('durable sessions and idempotency', () => {
     expect(east.record.id).not.toBe(south.record.id)
     expect(listSessions(storage)).toHaveLength(2)
   })
+
+  it('projects a hidden opponent claim as an ordinary draw in saved-session summaries', () => {
+    const storage = new MemoryStorage()
+    const started = startOrResumeSession(storage, { profile: 'riichi', seed: 'summary-claim-redaction' }, 'east', fixedNow)
+    const hiddenClaim = structuredClone(started.record)
+    const discarded = hiddenClaim.state.hands.east.pop()!
+    hiddenClaim.state.lastDiscard = { tile: discarded, by: 'east', turn: 0, claimed: false }
+    hiddenClaim.state.rivers.east = [hiddenClaim.state.lastDiscard]
+    hiddenClaim.state.phase = 'claim'
+    hiddenClaim.state.activeSeat = 'south'
+    hiddenClaim.state.claimQueue = ['south']
+    hiddenClaim.revision = 1
+    saveSession(storage, hiddenClaim, 0)
+
+    expect(loadSession(storage, hiddenClaim.id)?.state.phase).toBe('claim')
+    expect(listSessions(storage)[0]?.phase).toBe('draw')
+  })
 })

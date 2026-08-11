@@ -1,4 +1,4 @@
-import { applyAction, actorId, chooseDeterministicBotAction, initialState } from '../domain/engine'
+import { applyAction, actorId, chooseDeterministicBotAction, initialState, publicView } from '../domain/engine'
 import { canonicalAction, digest } from '../domain/hash'
 import type { ActionCandidate, GameConfig, Seat, SessionRecord, SessionSummary } from '../domain/types'
 
@@ -282,14 +282,14 @@ export function listSessions(storage: StorageLike): SessionSummary[] {
   return readIndex(storage).ids.flatMap((id) => {
     const record = loadSession(storage, id)
     if (!record) return []
+    const view = publicView(record.state, actorId(record.viewerSeat))
     return [{
       id: record.id,
       profile: record.state.profile,
       seedLabel: record.state.seed.slice(0, 18),
       viewerSeat: record.viewerSeat,
-      revision: record.revision,
       turn: record.state.turn,
-      phase: record.state.phase,
+      phase: view.phase,
       updatedAt: record.updatedAt,
     }]
   }).sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))

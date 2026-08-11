@@ -24,10 +24,10 @@ Bàn hiện tại tách rõ tay bài úp của người học, lựa chọn hợ
 
 ## Bàn chơi dạy gì
 
-- Tường bài 136 quân có seed, bốn vị trí, rút và đánh bỏ hợp lệ, cửa sổ gọi, chi/chow, pon/pung, kan/kong, ron và hoàn thành hình bài bằng tsumo.
-- Hoàn thành chuẩn bốn nhóm và một đôi hoặc bảy đôi, bài chờ chính xác, ukeire theo số quân còn thấy được, chỉ số hình bài so sánh và dữ kiện ở khu bài bỏ.
-- Hồ sơ Riichi, MCR và Hong Kong nêu rõ ranh giới tính điểm trước và trong khi chơi; yaku, fan, thanh toán, hoa và luật nhà chưa hỗ trợ không bao giờ được trình bày như kết luận có thẩm quyền.
-- Vòng học nhất quán: xem ứng viên hợp lệ gắn với trạng thái, so sánh bản xem trước giả định rồi xác nhận rõ ràng.
+- Nguồn 136 quân có seed được mô hình hóa thành một chồng rút chung chưa chia, bốn vị trí, lượt rút, đánh bỏ, gọi bài hợp lệ và cơ hội Ron/Tsumo hoàn thành dạng hỗ trợ. Không mô hình hóa tường chết và dora Riichi.
+- Hoàn thành chuẩn bốn nhóm và một đôi cùng bảy đôi theo hồ sơ: Riichi và bài học Hong Kong này cần bảy loại đôi khác nhau; MCR tính bộ bốn kín thành hai đơn vị đôi. Bài chờ, shanten, ukeire theo bản chưa thấy và bản đồ 34 loại đều theo hồ sơ đã chọn.
+- Mỗi hồ sơ nêu rõ phạm vi dạy học. Ron/Tsumo chỉ kết thúc tay bài trên dạng hỗ trợ, không xác lập điểm, yaku/fan hay furiten.
+- Mọi gợi ý dẫn đầu đồng hạng đều hiện mà không chọn trước. Xếp hạng theo shanten, ukeire chưa thấy rồi số loại; lượt rút bắt buộc là chính xác, hoàn thành chỉ chính xác về dạng/tính hợp lệ, và Bỏ lượt là gợi ý biên soạn.
 
 ## Bản đồ kho lưu trữ
 
@@ -38,7 +38,7 @@ Bàn hiện tại tách rõ tay bài úp của người học, lựa chọn hợ
 | [`src/App.tsx`](../src/App.tsx) | Thiết lập đa ngôn ngữ, bàn chơi, phòng thí nghiệm quyết định, nhật ký và giao diện phiên đã lưu. |
 | [`docs/framework-contract.md`](../docs/framework-contract.md) | Các quy tắc được hỗ trợ chính xác và khoảng cách tính điểm dễ thấy. |
 | [`docs/engine-lane.md`](../docs/engine-lane.md) | Kênh engine tùy chọn bị tắt mặc định và ranh giới tích hợp đã được xem xét. |
-| [`docs/images/app.png`](../docs/images/app.png) | Ảnh chụp màn hình ứng dụng hiện tại. |
+| [`docs/images/app.png`](../docs/images/app.png) | Ảnh tham chiếu; cập nhật sau khi xác minh bản nguồn này trong trình duyệt. |
 
 ## Bắt đầu nhanh
 
@@ -55,10 +55,10 @@ Máy chủ phát triển và xem trước được cố định tại `127.0.0.1
 
 ## Quyền hạn, quyền riêng tư và bằng chứng
 
-- Giao diện chỉ hiển thị chế độ xem công khai đã che thông tin theo người xem; tay bài khác, thứ tự tường, seed và đánh giá riêng vẫn được giấu kín.
+- Giao diện chỉ hiện chế độ xem công khai theo người xem; tay khác, thứ tự tường, seed, đánh giá riêng, khả năng gọi bài và sự kiện bỏ lượt kín được giấu đến khi lượt gọi hoặc hoàn thành trở thành công khai.
 - ID ứng viên không thể đoán gắn với mã trạng thái đầy đủ, người hành động và hành động chuẩn. Tọa độ, tên quân, mô hình hay ứng viên cũ không thể cấp quyền đổi trạng thái.
 - Bản xem trước chỉ là giả định. Quân tiếp theo trong tường vẫn ẩn cho đến khi xác nhận rõ ràng một lượt rút hợp lệ.
-- Dữ kiện chính xác, giá trị tính toán, nguyên tắc biên soạn, ước tính engine, giải thích mô hình và phép so sánh luôn được gắn nhãn riêng. Điểm theo hệ luật chưa hỗ trợ được ghi rõ thay vì suy đoán.
+- Dữ kiện chính xác, tính toán, hướng dẫn biên soạn, engine, mô hình và phép so sánh được tách riêng. “Bản chưa thấy” là bốn trừ số quân người xem nhìn thấy, không phải thành phần đã biết của chồng quân chưa chia hay xác suất rút; điểm chưa hỗ trợ không bị suy đoán.
 
 ## Xác minh
 

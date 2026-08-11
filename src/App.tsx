@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BookOpen, ChevronRight, CircleAlert, Database, Languages, LockKeyhole, Play, RefreshCw, Shield, Wind } from 'lucide-react'
 import { MahjongTable } from './components/MahjongTable'
+import { HandDevelopment } from './components/HandDevelopment'
 import { TeachingPanel } from './components/TeachingPanel'
 import { Tile } from './components/Tile'
-import { actorId, legalActions, previewAction, publicView } from './domain/engine'
+import { actorId, analyzeSeat, legalActions, previewAction, publicView, rankLegalCandidates } from './domain/engine'
 import { PROFILES } from './domain/profiles'
 import type { ActionCandidate, Locale, ProfileId, Seat, SessionRecord, SessionSummary, TileInstance } from './domain/types'
 import { PROFILE_IDS } from './domain/types'
@@ -44,6 +45,18 @@ function visibleHand(record: SessionRecord | null): TileInstance[] {
   return player && Array.isArray(player.hand) ? player.hand : []
 }
 
+async function settleLoadedRecord(record: SessionRecord): Promise<SessionRecord> {
+  return withPersistenceMutationLock(() => {
+    const latest = loadSession(window.localStorage, record.id) ?? record
+    if (latest.state.phase === 'finished' || latest.state.activeSeat === latest.viewerSeat) return latest
+    try {
+      return persistAutomatedSeats(window.localStorage, latest)
+    } catch {
+      return loadSession(window.localStorage, latest.id) ?? latest
+    }
+  })
+}
+
 export function App() {
   const [locale, setLocale] = useState<Locale>(readLocale)
   const [profile, setProfile] = useState<ProfileId>('riichi')
@@ -72,9 +85,9 @@ export function App() {
     if (available[0]) {
       const resumed = loadSession(window.localStorage, available[0].id)
       if (resumed) {
-        setRecord(resumed)
         setProfile(resumed.state.profile)
         setSeed(resumed.state.seed)
+        void settleLoadedRecord(resumed).then(setRecord)
       }
     }
   }, [])
@@ -85,9 +98,21 @@ export function App() {
     if (!record || record.state.phase === 'finished' || record.state.activeSeat !== record.viewerSeat) return []
     return legalActions(record.state, actorId(record.viewerSeat))
   }, [record])
+  const rankedCandidates = useMemo(() => record ? rankLegalCandidates(record.state, candidates) : [], [candidates, record])
+  const suggestedCandidate = rankedCandidates.find((item) => item.recommendation.suggested)?.candidate ?? null
+  const suggestedTileTypes = useMemo(() => new Set(
+    rankedCandidates.flatMap(({ candidate, recommendation }) => {
+      const action = candidate.action
+      if (!recommendation.suggested || action.kind !== 'discard') return []
+      const tile = hand.find((item) => item.id === action.tileId)
+      return tile ? [tile.type] : []
+    }),
+  ), [hand, rankedCandidates])
   const activeCandidate = useMemo(() =>
-    candidates.find((candidate) => candidate.id === inspectedId) ?? candidates.find((candidate) => candidate.id === selectedId) ?? null,
-  [candidates, inspectedId, selectedId])
+    candidates.find((candidate) => candidate.id === inspectedId)
+      ?? candidates.find((candidate) => candidate.id === selectedId)
+      ?? suggestedCandidate,
+  [candidates, inspectedId, selectedId, suggestedCandidate])
   const preview = useMemo(() => {
     if (!record || !activeCandidate) return null
     try { return previewAction(record.state, activeCandidate) } catch { return null }
@@ -115,12 +140,15 @@ export function App() {
   const resume = useCallback((id: string) => {
     const loaded = loadSession(window.localStorage, id)
     if (!loaded) return
-    setRecord(loaded)
     setProfile(loaded.state.profile)
     setSeed(loaded.state.seed)
     setSelectedId(null)
     setInspectedId(null)
-    setNotice({ tone: 'good', text: t('setup.resumed') })
+    setMutating(true)
+    void settleLoadedRecord(loaded).then((settled) => {
+      setRecord(settled)
+      setNotice({ tone: 'good', text: t('setup.resumed') })
+    }).finally(() => setMutating(false))
   }, [t])
 
   const selectCandidate = useCallback((candidate: ActionCandidate) => {
@@ -140,10 +168,24 @@ export function App() {
     const snapshot = record
     const requestId = `ui:${snapshot.id}:${snapshot.revision}:${candidate.id}`
     setMutating(true)
-    void withPersistenceMutationLock(() => (
-      persistCandidate(window.localStorage, snapshot, candidate, requestId)
-    )).then((mutation) => {
-      setRecord((current) => current?.id === mutation.record.id ? mutation.record : current)
+    void withPersistenceMutationLock(() => {
+      const mutation = persistCandidate(window.localStorage, snapshot, candidate, requestId)
+      // Do not publish a transient opponent claim queue to the learner UI.
+      // Resolve deterministic seats inside the same mutation lock and render
+      // only the next viewer-authorized (or finished) position.
+      let settledRecord = mutation.record
+      if (mutation.record.state.phase !== 'finished' && mutation.record.state.activeSeat !== mutation.record.viewerSeat) {
+        try {
+          settledRecord = persistAutomatedSeats(window.localStorage, mutation.record)
+        } catch {
+          // The learner's confirmed action is already durable. Reload any
+          // safely committed prefix and let the automation effect retry it.
+          settledRecord = loadSession(window.localStorage, mutation.record.id) ?? mutation.record
+        }
+      }
+      return { mutation, settledRecord }
+    }).then(({ mutation, settledRecord }) => {
+      setRecord((current) => current?.id === mutation.record.id ? settledRecord : current)
       setSelectedId(null)
       setInspectedId(null)
       setNotice({ tone: 'good', text: t('candidate.applied') })
@@ -191,9 +233,11 @@ export function App() {
 
   const profileRules = PROFILES[profile]
   const activeProfileRules = record ? PROFILES[record.state.profile] : profileRules
+  const currentAnalysis = record ? analyzeSeat(record.state, record.viewerSeat) : null
   const discardCandidateByTile = new Map(
     candidates.flatMap((candidate) => candidate.action.kind === 'discard' ? [[candidate.action.tileId, candidate] as const] : []),
   )
+  const suggestedTiles = [...suggestedTileTypes].flatMap((type) => hand.find((tile) => tile.type === type) ?? [])
 
   return (
     <div className="app-shell" data-locale={locale} data-profile={record?.state.profile ?? profile} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
@@ -241,36 +285,44 @@ export function App() {
         {notice && <div className={`notice ${notice.tone}`} role="status">{notice.tone === 'good' ? <Shield size={16} /> : <CircleAlert size={16} />}{notice.text}</div>}
 
         {record && view ? (
-          <div className="game-workspace" data-session-id={record.id} data-revision={record.revision}>
+          <div className="game-workspace" data-session-id={record.id}>
             <section className="authority-strip">
               <LockKeyhole size={16} />
               <div><strong>{t('session.authority')}</strong><span>{t('session.authorityDetail')}</span></div>
-              <code>r{record.revision} · {view.viewToken.slice(0, 12)}</code>
+              <code>{t('table.token', { token: view.viewToken.slice(2, 10) })}</code>
             </section>
 
             <div className="rules-now"><strong>{t(activeProfileRules.nameKey)}</strong><span>{t(activeProfileRules.scoringBoundaryKey)}</span></div>
 
             {view.result && (
               <section className="result-banner" role="status">
-                <span>和</span><div><small>{t('result.heading')}</small><strong>{t(view.result.scoringStatusKey)}</strong></div>
+                <span>形</span><div><small>{t('result.heading')}</small><strong>{t(view.result.scoringStatusKey)}</strong></div>
               </section>
             )}
 
-            <MahjongTable view={view} viewerSeat={record.viewerSeat} t={t} automating={automating} />
+            <div className="play-layout">
+              <MahjongTable view={view} viewerSeat={record.viewerSeat} t={t} automating={automating} suggestedTiles={suggestedTiles} />
 
-            <div className="decision-layout">
+              <div className="decision-layout">
               <section className="hand-panel">
                 <header><div><small>{t('table.viewer')}</small><h2>{t('hand.heading')}</h2></div><span>{t(`phase.${view.phase}`)}</span></header>
                 <p>{t(view.activeSeat !== record.viewerSeat ? 'hand.help.wait' : view.phase === 'draw' ? 'hand.help.draw' : view.phase === 'claim' ? 'hand.help.claim' : 'hand.help.discard')}</p>
                 <div className="learner-hand" data-testid="viewer-hand">
                   {hand.map((tile) => {
                     const candidate = discardCandidateByTile.get(tile.id)
-                    const interaction = candidate ? { onClick: () => selectCandidate(candidate) } : {}
+                    const interaction = candidate ? {
+                      onClick: () => selectCandidate(candidate),
+                      onPointerEnter: () => setInspectedId(candidate.id),
+                      onPointerLeave: () => setInspectedId(null),
+                      onFocus: () => setInspectedId(candidate.id),
+                      onBlur: () => setInspectedId(null),
+                    } : {}
                     return (
                       <Tile
                         key={tile.id}
                         tile={tile}
                         selected={Boolean(candidate && selectedId === candidate.id)}
+                        suggested={Boolean(candidate && suggestedTileTypes.has(tile.type) && !selectedId)}
                         disabled={!candidate || automating || mutating}
                         {...interaction}
                         label={candidate ? `${t('action.discard')} ${tileGlyph(tile.type)}` : tileGlyph(tile.type)}
@@ -279,10 +331,11 @@ export function App() {
                   })}
                 </div>
                 <div className="hand-legend"><span className="provenance exact">{t('evidence.exact')}</span><span className="provenance calculated">{t('evidence.calculated')}</span><span className="provenance authored">{t('evidence.authored')}</span></div>
+                {currentAnalysis && <HandDevelopment analysis={currentAnalysis} label={t('analysis.before')} t={t} />}
               </section>
 
               <TeachingPanel
-                candidates={candidates}
+                rankedCandidates={rankedCandidates}
                 hand={hand}
                 preview={preview}
                 selectedId={selectedId}
@@ -294,6 +347,7 @@ export function App() {
                 onCancel={() => { setSelectedId(null); setInspectedId(null) }}
                 busy={automating || mutating}
               />
+              </div>
             </div>
 
             <section className="chronicle-panel">
@@ -314,7 +368,7 @@ export function App() {
               {sessions.map((item) => (
                 <button key={item.id} type="button" onClick={() => resume(item.id)} className={record?.id === item.id ? 'current' : ''}>
                   <span className="session-profile">{item.profile === 'riichi' ? '立' : item.profile === 'mcr' ? '国' : '港'}</span>
-                  <span><strong>{t(PROFILES[item.profile].nameKey)}</strong><small>{item.seedLabel} · r{item.revision} · {t(`phase.${item.phase}`)}</small></span>
+                  <span><strong>{t(PROFILES[item.profile].nameKey)}</strong><small>{item.seedLabel} · {t(`phase.${item.phase}`)}</small></span>
                   <span>{t('setup.resume')} <ChevronRight size={14} /></span>
                 </button>
               ))}

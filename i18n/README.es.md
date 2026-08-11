@@ -24,10 +24,10 @@ La mesa separa claramente la mano oculta del alumno, las opciones válidas, la v
 
 ## Lo que enseña la mesa
 
-- Un muro de 136 fichas definido por semilla, cuatro jugadores, robos y descartes válidos, fases de declaración y finalización mediante chi/chow, pon/pung, kan/kong, ron y tsumo.
-- Forma estándar de cuatro grupos y un par o siete pares, esperas exactas, ukeire según las copias visibles, un índice de forma comparativo y hechos observables en las filas de descarte.
-- Los perfiles Riichi, MCR y Hong Kong muestran sus límites de puntuación antes y durante el juego; los yaku, fan, pagos, flores y reglas de la casa no compatibles nunca se presentan como autoritativos.
-- El ciclo de aprendizaje es constante: examinar un candidato válido vinculado al estado, comparar una vista previa hipotética y confirmar explícitamente.
+- Una fuente de 136 fichas definida por semilla y modelada como una pila genérica de fichas sin repartir, cuatro jugadores, robos, descartes y llamadas válidos, y oportunidades Ron/Tsumo de completar una forma admitida. No se modelan el muro muerto ni dora de Riichi.
+- Forma estándar de cuatro grupos y un par, más siete pares según el perfil: siete tipos distintos en Riichi y esta lección de Hong Kong; MCR cuenta un cuarteto oculto como dos unidades de pareja. Esperas, shanten, ukeire de copias no vistas y el mapa de 34 tipos respetan el perfil.
+- Los perfiles muestran el límite del subconjunto didáctico. Ron/Tsumo termina la mano solo por forma de fichas admitida; no establece validez de puntuación, yaku/fan ni furiten.
+- Se muestran todas las opciones líderes empatadas sin preselección. El orden usa shanten, copias útiles no vistas y cantidad de tipos; el robo forzado es exacto, la finalización solo lo es para forma/legalidad y Pasar es guía redactada.
 
 ## Mapa del repositorio
 
@@ -38,7 +38,7 @@ La mesa separa claramente la mano oculta del alumno, las opciones válidas, la v
 | [`src/App.tsx`](../src/App.tsx) | La configuración multilingüe, la tabla, el laboratorio de decisiones, la crónica y la interfaz de sesión guardada. |
 | [`docs/framework-contract.md`](../docs/framework-contract.md) | Las reglas exactas apoyadas y las brechas de puntuación notorias. |
 | [`docs/engine-lane.md`](../docs/engine-lane.md) | La integración opcional del motor, desactivada por defecto, y su límite revisado. |
-| [`docs/images/app.png`](../docs/images/app.png) | Captura de pantalla de la aplicación actual. |
+| [`docs/images/app.png`](../docs/images/app.png) | Captura de referencia; se actualiza tras validar esta revisión en el navegador. |
 
 ## Inicio rápido
 
@@ -55,10 +55,10 @@ Los servidores de desarrollo y vista previa están fijados en `127.0.0.1:5182` y
 
 ## Autoridad, privacidad y evidencia
 
-- La interfaz presenta solo una vista pública con la información oculta según el espectador; las otras manos, el orden del muro, la semilla y la evaluación privada permanecen ocultos.
+- La interfaz muestra solo la vista pública del espectador; otras manos, orden del muro, semilla, evaluación privada, posibilidad de reclamar y pases ocultos siguen secretos hasta que una llamada o finalización sea pública.
 - Los ID de candidato opacos vinculan el token de estado completo, el actor y la acción canónica. Una coordenada, una etiqueta de ficha, un modelo o un candidato obsoleto no pueden autorizar un cambio de estado.
 - La vista previa es hipotética. La siguiente ficha del muro permanece oculta hasta que se confirma explícitamente un robo válido.
-- Las pruebas exactas, calculadas, de autor, de motor, de modelo y de analogía permanecen etiquetadas por separado. La puntuación de perfiles no admitidos permanece visible en lugar de ser adivinada.
+- Hechos exactos, cálculos, guía redactada, motor, modelo y analogía se etiquetan por separado. «Copias no vistas» es cuatro menos lo visible para ese espectador, no contenido conocido de la pila sin repartir ni probabilidad; la puntuación no admitida nunca se adivina.
 
 ## Verificación
 
